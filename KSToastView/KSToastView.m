@@ -105,6 +105,10 @@ static NSTextAlignment _textAligment = NSTextAlignmentCenter;
 	return [self ks_showToast:toast duration:duration delay:KS_TOAST_VIEW_SHOW_DELAY];
 }
 
++ (void)ks_showToast:(id)toast duration:(NSTimeInterval)duration atPoint:(CGPoint) point {
+	return [self ks_showToast:toast duration:duration delay:KS_TOAST_VIEW_SHOW_DELAY atPoint:point];
+}
+
 + (void)ks_showToast:(id)toast delay:(NSTimeInterval)delay {
 	return [self ks_showToast:toast duration:_duration delay:delay];
 }
@@ -117,6 +121,10 @@ static NSTextAlignment _textAligment = NSTextAlignmentCenter;
 	return [self ks_showToast:toast duration:duration delay:delay completion:nil];
 }
 
++ (void)ks_showToast:(id)toast duration:(NSTimeInterval)duration delay:(NSTimeInterval)delay  atPoint:(CGPoint) point {
+	return [self ks_showToast:toast duration:duration delay:delay atPoint:point completion:nil];
+}
+
 + (void)ks_showToast:(id)toast duration:(NSTimeInterval)duration completion:(KSToastBlock)completion {
 	return [self ks_showToast:toast duration:duration delay:KS_TOAST_VIEW_SHOW_DELAY completion:completion];
 }
@@ -126,6 +134,10 @@ static NSTextAlignment _textAligment = NSTextAlignmentCenter;
 }
 
 + (void)ks_showToast:(id)toast duration:(NSTimeInterval)duration delay:(NSTimeInterval)delay completion:(KSToastBlock)completion {
+	[self ks_showToast:toast duration:duration delay:delay atPoint:nil completion:completion];
+}
+
++ (void)ks_showToast:(id)toast duration:(NSTimeInterval)duration delay:(NSTimeInterval)delay  atPoint:(CGPoint)point completion:(KSToastBlock)completion {
 	NSString *toastText = [NSString stringWithFormat:@"%@", toast];
 	if (toastText.length < 1) {
 		return;
@@ -134,7 +146,7 @@ static NSTextAlignment _textAligment = NSTextAlignmentCenter;
 	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 		UIView *keyWindowView = [self _keyWindowView];
 		if (!keyWindowView) {
-		    return;
+			return;
 		}
 		[[keyWindowView viewWithTag:KS_TOAST_VIEW_TAG] removeFromSuperview];
 		[keyWindowView endEditing:YES];
@@ -159,17 +171,17 @@ static NSTextAlignment _textAligment = NSTextAlignmentCenter;
 		[self _maxHeight];
 
 		// One line text's height
-		CGFloat toastTextHeight = [@"KS" sizeWithAttributes:@{ NSFontAttributeName:[self _textFont], }].height + 0.5f;
+		CGFloat toastTextHeight = [@"KS" sizeWithAttributes:@{NSFontAttributeName : [self _textFont],}].height + 0.5f;
 
 		// ToastView's textInsets
 		if (UIEdgeInsetsEqualToEdgeInsets(_textInsets, UIEdgeInsetsZero)) {
-		    _textInsets = UIEdgeInsetsMake(toastTextHeight / 2.0f, toastTextHeight, toastTextHeight / 2.0f, toastTextHeight);
+			_textInsets = UIEdgeInsetsMake(toastTextHeight / 2.0f, toastTextHeight, toastTextHeight / 2.0f, toastTextHeight);
 		}
 
 		if (_cornerRadius <= 0.0f || _cornerRadius > toastTextHeight / 2.0f) {
-		    toastView.layer.cornerRadius = (toastTextHeight + _textInsets.top + _textInsets.bottom) / 2.0f;
+			toastView.layer.cornerRadius = (toastTextHeight + _textInsets.top + _textInsets.bottom) / 2.0f;
 		} else {
-		    toastView.layer.cornerRadius = _cornerRadius;
+			toastView.layer.cornerRadius = _cornerRadius;
 		}
 
 		// ToastView's size
@@ -178,46 +190,54 @@ static NSTextAlignment _textAligment = NSTextAlignmentCenter;
 		CGFloat toastViewHeight = (toastLabelSize.height + 0.5f) + (_textInsets.top + _textInsets.bottom);
 
 		if (toastViewWidth > _maxWidth) {
-		    toastViewWidth = _maxWidth;
+			toastViewWidth = _maxWidth;
 		}
 
 		if (_maxLines > 0) {
-		    toastViewHeight = toastTextHeight * _maxLines + _textInsets.top + _textInsets.bottom;
+			toastViewHeight = toastTextHeight * _maxLines + _textInsets.top + _textInsets.bottom;
 		}
 
 		if (toastViewHeight > _maxHeight) {
-		    toastViewHeight = _maxHeight;
+			toastViewHeight = _maxHeight;
 		}
 
-		NSDictionary *views = NSDictionaryOfVariableBindings(toastLabel, toastView);
-		[toastView addSubview:toastLabel];
-		[keyWindowView addSubview:toastView];
+		if (CGPointEqualToPoint(point, CGPointZero)) {
+			NSDictionary *views = NSDictionaryOfVariableBindings(toastLabel, toastView);
+			[toastView addSubview:toastLabel];
+			[keyWindowView addSubview:toastView];
 
-		[toastView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"H:|-(%@)-[toastLabel]-(%@)-|", @(_textInsets.left), @(_textInsets.right)]
-		                                                                  options:0
-		                                                                  metrics:nil
-		                                                                    views:views]];
-		[toastView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"V:|-(%@)-[toastLabel]-(%@)-|", @(_textInsets.top), @(_textInsets.bottom)]
-		                                                                  options:0
-		                                                                  metrics:nil
-		                                                                    views:views]];
+			[toastView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"H:|-(%@)-[toastLabel]-(%@)-|", @(_textInsets.left), @(_textInsets.right)]
+																			  options:0
+																			  metrics:nil
+																				views:views]];
+			[toastView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"V:|-(%@)-[toastLabel]-(%@)-|", @(_textInsets.top), @(_textInsets.bottom)]
+																			  options:0
+																			  metrics:nil
+																				views:views]];
 
-		[keyWindowView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"H:[toastView(%@)]", @(toastViewWidth)]
-		                                                                      options:0
-		                                                                      metrics:nil
-		                                                                        views:views]];
-		[keyWindowView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"V:|-(>=%@)-[toastView(<=%@)]-(%@)-|", @(_offsetTop), @(toastViewHeight), @(_offsetBottom)]
-		                                                                      options:0
-		                                                                      metrics:nil
-		                                                                        views:views]];
-		[keyWindowView addConstraint:[NSLayoutConstraint constraintWithItem:toastView
-		                                                          attribute:NSLayoutAttributeCenterX
-		                                                          relatedBy:NSLayoutRelationEqual
-		                                                             toItem:keyWindowView
-		                                                          attribute:NSLayoutAttributeCenterX
-		                                                         multiplier:1.0f
-		                                                           constant:0.0f]];
-		[keyWindowView layoutIfNeeded];
+			[keyWindowView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"H:[toastView(%@)]", @(toastViewWidth)]
+																				  options:0
+																				  metrics:nil
+																					views:views]];
+			[keyWindowView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"V:|-(>=%@)-[toastView(<=%@)]-(%@)-|", @(_offsetTop), @(toastViewHeight), @(_offsetBottom)]
+																				  options:0
+																				  metrics:nil
+																					views:views]];
+			[keyWindowView addConstraint:[NSLayoutConstraint constraintWithItem:toastView
+																	  attribute:NSLayoutAttributeCenterX
+																	  relatedBy:NSLayoutRelationEqual
+																		 toItem:keyWindowView
+																	  attribute:NSLayoutAttributeCenterX
+																	 multiplier:1.0f
+																	   constant:0.0f]];
+			[keyWindowView layoutIfNeeded];
+		} else {
+			CGRect frame = toastLabel.frame;
+			frame.origin.x = point.x;
+			frame.origin.y = point.y;
+			toastLabel.frame = frame;
+		}
+
 
 		[UIView animateWithDuration:KS_TOAST_VIEW_ANIMATION_DURATION animations: ^{
 		    toastView.alpha = 1.0f;
